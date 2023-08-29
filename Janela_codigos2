@@ -1,0 +1,389 @@
+import time
+import pyperclip
+import pandas as pd
+import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from tkinter import *
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+import os
+
+def IC_automatico():
+
+    #Identificando o usuario
+    user = os.getlogin()
+
+    #def IC_automatico():
+    #navegador = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+    navegador = webdriver.Chrome(executable_path=r'chromedriver.exe')
+    
+    plan = pd.read_excel(r"C:\Users\{}\OneDrive - Baxter\MFG\Carga Componentes\IC Automatico.xlsm".format(user), sheet_name="IC")
+
+    num_ordem = int((plan['Apoio IC'] [0]))
+    Local = str((plan['Local'] [0]))
+
+    # Abrir Chrome no JDE
+    #abre o link
+    navegador.get(r"https://e1lapd.aws.baxter.com/jde/E1Menu.maf?jdeowpBackButtonProtect=PROTECTED")
+    #Aguarda a pagina aparecer
+    while len(navegador.find_elements(By.ID,'carousel')) < 1:
+        time.sleep(1)
+
+    wait = WebDriverWait(navegador, 200)
+
+    #Menu
+    wait.until(EC.element_to_be_clickable((By.ID, 'drop_mainmenu'))).click()
+
+    #baxter Menu
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div[2]/div[3]/div/div[2]/div[4]/div/div/div[2]/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Manufatura
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[10]/table/tbody/tr/td/div/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #MFG Brasil
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[11]/table/tbody/tr/td/div/div[2]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Relatório chão de fabrica
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[12]/table/tbody/tr/td/div/div[3]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Conclusões integrais
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[13]/table/tbody/tr/td/div/div[5]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/a'))).click()
+
+    #indo para o iFrame da pagina interna
+    navegador.switch_to.frame("e1menuAppIframe")
+
+    for x in range (num_ordem):
+        wo = int((plan['Nº da Ordem'] [x]))
+
+        #Campo WO
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/table/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[1]/td/div[1]/table/tbody/tr[1]/td[2]/div/nobr/input'))).send_keys(wo)
+
+        #Campo W.O. (Pesquisar) Enter
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/table/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[1]/td/div[1]/table/tbody/tr[1]/td[2]/div/nobr/input'))).send_keys(Keys.ENTER)
+        time.sleep(1.5)
+
+        #Seleciona tudo
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/table/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[2]/td/div/table/tbody/tr/td[2]/table/tbody/tr/td/table/tbody/tr/td[1]/div/input'))).click()
+        time.sleep(0.3)
+
+        #Selecionar(ENTRAR NA ORDEM)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/a/img'))).click()
+
+        #Quantidade
+        Quant = str((plan['Quant. Pedida'] [x]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/table[2]/tbody/tr/td/div/span[6]/nobr/input'))).send_keys(Quant)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/table[2]/tbody/tr/td/div/span[6]/nobr/input'))).send_keys(Keys.BACKSPACE)
+
+        #Aba Lote/Local
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/span/table/tbody/tr/td/table/tbody/tr/td[2]/table/tbody/tr/td/table/tbody/tr/td/span/a'))).click()
+        time.sleep(0.2)
+
+        #Local
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/nobr/input'))).send_keys(Local)
+
+        Lote = str((plan['Lote/ Série'] [x]))
+
+        #TAB para campo lote
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/nobr/input'))).send_keys(Keys.TAB)
+        time.sleep(0.2)
+
+        #Lote
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[6]/nobr/input'))).send_keys(Lote)
+
+        #Clica no campo abaixo para gerar efeito das alterações    
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[10]/nobr/input'))).click()
+        time.sleep(1)
+
+        #Salvar e Fechar
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[3]/button'))).click()
+        navegador.find_element(By.ID,'C0_561').click()
+
+        #Limpar campo wo
+        for i in range(9):
+            #campo wo
+            wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/table/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[1]/td/div[1]/table/tbody/tr[1]/td[2]/div/nobr/input'))).send_keys(Keys.BACKSPACE)
+
+
+    #print("======================== CARGAS FINALIZADAS ========================")
+
+    navegador.quit()
+
+    #By: Neyton Hugo   
+    
+    
+#-----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+
+
+def Abertura_ordens():
+
+    #Identificando o usuario
+    user = os.getlogin()
+
+    #navegador = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+    navegador = webdriver.Chrome(executable_path=r'chromedriver.exe')
+
+    # arquivo = Path(r"C:\Users\{}\OneDrive - Baxter\Indicadores_Gerais\PCP\Abertura de W.O\Abertura de W.O.s.xlsm".format(user))
+
+    # if arquivo.is_file():
+    #     print("=================== Buscando Planilha no Drive Z ===================")
+    #     plancam = "Z"
+
+    # else:
+    #     print("=================== Buscando Planilha no Drive L ===================")
+    #     plancam = "L"
+
+    plan = pd.read_excel(r"C:/Users/{}/OneDrive - Baxter/Indicadores_Gerais/PCP/Abertura de W.O/Abertura de W.O.s.xlsm".format(user), sheet_name="COM")
+
+    num_ordem = int((plan['Num. Ordens'] [0]))
+    Filial = str((plan['Filial/Fábrica'] [0]))
+    Categoria = str((plan['Categoria 02'] [0]))
+
+    # Abrir Chrome no JDE
+    #abre o link
+    navegador.get(r"https://e1lapd.aws.baxter.com/jde/E1Menu.maf?jdeowpBackButtonProtect=PROTECTED")
+    #navegador.minimize_window()
+    #Aguarda a pagina aparecer
+    while len(navegador.find_elements(By.ID,'carousel')) < 1:
+        time.sleep(1)
+
+
+    wait = WebDriverWait(navegador, 200)
+
+    #Menu
+    wait.until(EC.element_to_be_clickable((By.ID, 'drop_mainmenu'))).click()
+
+    #baxter Menu
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div[2]/div[3]/div/div[2]/div[4]/div/div/div[2]/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Manufatura
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[10]/table/tbody/tr/td/div/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #MFG Brasil
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[11]/table/tbody/tr/td/div/div[2]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Ordem de trabalho - wo
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[12]/table/tbody/tr/td/div/div[2]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Entrada e alteração de ordens
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[13]/table/tbody/tr/td/div/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/a'))).click()
+
+    #indo para o iFrame da pagina interna
+    navegador.switch_to.frame("e1menuAppIframe")
+
+    #Botão "Inserir"
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[5]/a/img'))).click()
+
+    #Filial
+    for i in range(14):
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[1]/table[2]/tbody/tr/td/div/span[5]/nobr/input'))).send_keys(Keys.BACKSPACE)
+
+    time.sleep(0.1)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[1]/table[2]/tbody/tr/td/div/span[5]/nobr/input'))).send_keys(Filial)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[1]/table[2]/tbody/tr/td/div/span[5]/nobr/input'))).send_keys(Keys.BACKSPACE)
+
+    for x in range (num_ordem):
+        item = str((plan['Nº do Item'] [x]))
+
+        #Numero do item
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[1]/table[2]/tbody/tr/td/div/span[12]/nobr/input'))).send_keys(item)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[1]/table[2]/tbody/tr/td/div/span[12]/nobr/input'))).send_keys(Keys.BACKSPACE)
+
+        #Data Solicitada
+        Dia_Solicitada = str((plan['Dia'] [x]))
+        for i in range(9):
+            wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[2]/nobr/input'))).send_keys(Keys.BACKSPACE)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[2]/nobr/input'))).send_keys(Dia_Solicitada)
+
+        #Data Solicitada
+        Mes_Solicitada = str((plan['Mês'] [x]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[2]/nobr/input'))).send_keys(Mes_Solicitada)
+
+        #Data Solicitada
+        Ano_Solicitada = str((plan['Ano'] [x]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[2]/nobr/input'))).send_keys(Ano_Solicitada)
+        time.sleep(0.3)
+
+        #Data Inicial
+        Dia_Solicitada = str((plan['Dia'] [x]))
+        for i in range(9):
+            wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[7]/nobr/input'))).send_keys(Keys.BACKSPACE)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[7]/nobr/input'))).send_keys(Dia_Solicitada)
+
+        #Data Inicial
+        Mes_Solicitada = str((plan['Mês'] [x]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[7]/nobr/input'))).send_keys(Mes_Solicitada)
+
+        #Data Inicial
+        Ano_Solicitada = str((plan['Ano'] [x]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[7]/nobr/input'))).send_keys(Ano_Solicitada)
+        time.sleep(0.3)
+
+        #Quantidade
+        Quant = str((plan['Quantidade'] [x]))
+        for i in range(15):
+            wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/table[2]/tbody/tr/td/div/span[1]/nobr/input'))).send_keys(Keys.BACKSPACE)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/table[2]/tbody/tr/td/div/span[1]/nobr/input'))).send_keys(Quant)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/table[2]/tbody/tr/td/div/span[1]/nobr/input'))).send_keys(Keys.BACKSPACE)
+
+        #Clica em outro campo para concretizar os dados digitados
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[2]/table[2]/tbody/tr/td/div/span[4]/nobr/input'))).click()
+
+        #Aba Cód. Categoria
+        Cat = str((plan['Categoria 02'] [0]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/span/table/tbody/tr/td/table/tbody/tr/td[3]/table/tbody/tr/td/table/tbody/tr/td/span/a'))).click()
+        for i in range(4):
+            wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[6]/nobr/input'))).send_keys(Keys.BACKSPACE)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[6]/nobr/input'))).send_keys(Cat)
+
+        #OK
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/a/img'))).click()
+        time.sleep(0.7)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/a/img'))).click()
+        time.sleep(1)
+
+        #Aba Data e quantidade
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/span/table/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr/td/table/tbody/tr/td/span/a'))).click()
+
+        #Click no campo data solicitada para fazer esperar pagina carregar
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/span/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/span/div/span[1]/table[2]/tbody/tr/td/div/span[2]/nobr/input'))).click()
+        time.sleep(0.4)
+
+        #Apagando campo item
+        for i in range(14):
+            wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[1]/table[2]/tbody/tr/td/div/span[12]/nobr/input'))).send_keys(Keys.BACKSPACE)
+        time.sleep(0.4)
+
+    #Fecha Navegador
+    print('=================== Abertura de ordens Finalizada ===================')
+
+    navegador.quit()
+
+    #By: Neyton Hugo
+
+
+#-----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+
+
+def Mudanca_status():
+    
+    #navegador = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+    navegador = webdriver.Chrome(executable_path=r'chromedriver.exe')
+
+    #Identificando o usuario
+    user = os.getlogin()
+
+    plan = pd.read_excel(r"C:\Users\{}\OneDrive - Baxter\Apontamento\Neyton Hugo\Voltar_ordens_80.xlsm".format(user))
+
+    print(plan['Apoio ao Python'] [0])
+
+    num_ordem = int((plan['Apoio ao Python'] [0]))
+
+    # Abrir Chrome no JDE
+    #abre o link
+    navegador.get(r"https://e1lapd.aws.baxter.com/jde/E1Menu.maf?jdeowpBackButtonProtect=PROTECTED")
+    #Aguarda a pagina aparecer
+    while len(navegador.find_elements(By.ID,'carousel')) < 1:
+        time.sleep(1)
+
+
+    wait = WebDriverWait(navegador, 20)
+
+    #Menu
+    wait.until(EC.element_to_be_clickable((By.ID, 'drop_mainmenu'))).click()
+
+    #baxter Menu
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div[2]/div[3]/div/div[2]/div[4]/div/div/div[2]/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Manufatura
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[10]/table/tbody/tr/td/div/div[1]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #MFG Brasil
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[11]/table/tbody/tr/td/div/div[2]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Relatório chão de fabrica
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[12]/table/tbody/tr/td/div/div[3]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/span'))).click()
+
+    #Chance Work Status
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[13]/table/tbody/tr/td/div/div[8]/div/table/tbody/tr/td[4]/table/tbody/tr/td/table/tbody/tr/td[1]/a'))).click()
+
+    #indo para o iFrame da pagina interna
+    navegador.switch_to.frame("e1menuAppIframe")
+
+    for x in range (num_ordem):
+        wo = int((plan['Ordens'] [x]))
+        time.sleep(1)
+        #Campo W.O
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/table/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[1]/td/div[1]/table/tbody/tr[1]/td[2]/div/nobr/input'))).send_keys(wo)
+
+        #pesquisar
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[3]/a/img'))).click()
+
+        #Select / Entrar
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/a/img'))).click()
+
+        #Campo Status
+        status = int((plan['STATUS'] [0]))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span/table[2]/tbody/tr/td/div/span[14]/nobr/input'))).send_keys(status)
+
+        #Select / Fechar
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/a/img'))).click()
+
+        #Retorna o campo ao estado de seleção
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form[3]/div/table/tbody/tr/td/div/span[2]/table/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[1]/td/div[1]/table/tbody/tr[1]/td[2]/div/nobr/input'))).send_keys(Keys.RETURN)
+
+    navegador.quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+janela = Tk()
+
+janela.title("Sumário de códigos")
+janela.geometry("325x400")
+
+texto_orientacao = Label(janela, text="============= Escolha uma Rotina =============")
+texto_orientacao.grid(column=0, row=0)
+
+botao = Button(janela, text="I.C. Automático", command=IC_automatico)
+botao.grid(column=0, row=1)
+
+botao2 = Button(janela, text="Abertura de ordens", command=Abertura_ordens)
+botao2.grid(column=0, row=2)
+
+botao3 = Button(janela, text="Mudança de Status", command=Mudanca_status)
+botao3.grid(column=0, row=3)
+
+janela.mainloop()
+
+
+
+
+#By: Neyton Hugo
